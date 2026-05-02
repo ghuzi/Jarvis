@@ -902,6 +902,161 @@
                 return;
             }
 
+            // Smart Browser Commands
+            let match = lowerText.match(/whatsapp (.+) ko message karo (.*)/);
+            if (match) {
+                window.open('https://web.whatsapp.com', '_blank');
+                const reply = `Opening WhatsApp to message ${match[1]}!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open whatsapp')) {
+                window.open('https://web.whatsapp.com', '_blank');
+                const reply = 'Opening WhatsApp for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/instagram pe (.+) dhundo/);
+            if (match) {
+                window.open('https://instagram.com/' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Searching ${match[1]} on Instagram!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open instagram')) {
+                window.open('https://instagram.com', '_blank');
+                const reply = 'Opening Instagram for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('open facebook')) {
+                window.open('https://facebook.com', '_blank');
+                const reply = 'Opening Facebook for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/search (.+) on twitter/);
+            if (match) {
+                window.open('https://x.com/search?q=' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Searching ${match[1]} on Twitter!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open twitter') || lowerText.includes('open x')) {
+                window.open('https://x.com', '_blank');
+                const reply = 'Opening Twitter for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/search (.+) on github/);
+            if (match) {
+                window.open('https://github.com/search?q=' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Searching ${match[1]} on GitHub!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open github')) {
+                window.open('https://github.com', '_blank');
+                const reply = 'Opening GitHub for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('open gmail')) {
+                window.open('https://gmail.com', '_blank');
+                const reply = 'Opening Gmail for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/search (.+) on linkedin/);
+            if (match) {
+                window.open('https://linkedin.com/search/results/all/?keywords=' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Searching ${match[1]} on LinkedIn!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open linkedin')) {
+                window.open('https://linkedin.com', '_blank');
+                const reply = 'Opening LinkedIn for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('open netflix')) {
+                window.open('https://netflix.com', '_blank');
+                const reply = 'Opening Netflix for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/play (.+) on spotify/);
+            if (match) {
+                window.open('https://open.spotify.com/search/' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Searching ${match[1]} on Spotify!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open spotify')) {
+                window.open('https://open.spotify.com', '_blank');
+                const reply = 'Opening Spotify for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('open chatgpt')) {
+                window.open('https://chat.openai.com', '_blank');
+                const reply = 'Opening ChatGPT for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/directions to (.+)/);
+            if (match) {
+                window.open('https://maps.google.com/maps?q=' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Getting directions to ${match[1]}!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            } else if (lowerText.includes('open maps')) {
+                window.open('https://maps.google.com', '_blank');
+                const reply = 'Opening Maps for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('open news') || lowerText.includes('latest news')) {
+                window.open('https://news.google.com', '_blank');
+                const reply = 'Opening News for you!';
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
+            match = lowerText.match(/weather in (.+)/);
+            if (match) {
+                window.open('https://wttr.in/' + encodeURIComponent(match[1].trim()), '_blank');
+                const reply = `Checking weather in ${match[1]}!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+
             callGroqApi();
         };
 
