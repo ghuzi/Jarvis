@@ -846,7 +846,7 @@
                 return;
             }
             if (lowerText.includes('open youtube')) {
-                fetch('http://localhost:8765/command?action=youtube');
+                window.open('https://youtube.com', '_blank');
                 const reply = 'Opening YouTube for you!';
                 const { speakBtnRef: btn } = addMessage(reply, 'ai');
                 speakText(reply, btn);
