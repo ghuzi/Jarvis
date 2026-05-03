@@ -868,7 +868,7 @@
         }
 
         // Chat UI
-        const addMessage = (text, sender) => {
+        function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -924,11 +924,11 @@
             chatContainer.insertBefore(messageDiv, typingIndicator);
             scrollToBottom();
             return { speakBtnRef, msgId };
-        };
+        }
 
-        const scrollToBottom = () => {
+        function scrollToBottom() {
             chatContainer.scrollTop = chatContainer.scrollHeight;
-        };
+        }
 
         const setTyping = (isTyping) => {
             if (isTyping) {
