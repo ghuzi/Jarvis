@@ -206,7 +206,27 @@
             text-overflow: ellipsis;
         }
 
-        .history-item:hover {
+        .history-item:hover,
+        .session-item:hover {
+            background: var(--accent-color);
+            color: var(--text-main);
+        }
+
+        .session-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-item.active,
+        .history-item.active {
             background: var(--accent-color);
             color: var(--text-main);
         }
@@ -244,11 +264,6 @@
         .new-chat-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 15px rgba(83, 74, 183, 0.4);
-        }
-
-        .history-item.active {
-            background: var(--accent-color);
-            color: var(--text-main);
         }
 
         /* Chat Area */
@@ -658,13 +673,54 @@
             }
         }
 
+        // DOM Elements
+        const chatContainer = document.getElementById('chat-container');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const micBtn = document.getElementById('mic-btn');
+        const textInput = document.getElementById('text-input');
+        const sendBtn = document.getElementById('send-btn');
+
         function clearChatUI() {
+            // Remove all messages except the first welcome message
             const messages = chatContainer.querySelectorAll('.message');
-            // Keep the first welcome message
             for (let i = 1; i < messages.length; i++) {
                 messages[i].remove();
             }
             conversationHistory = [];
+        }
+
+        async function loadSession(sessionId) {
+            currentSessionId = sessionId;
+
+            // Clear current UI
+            clearChatUI();
+
+            // Load messages from Supabase for this session
+            const { data, error } = await supabaseClient
+                .from('conversations')
+                .select('*')
+                .eq('session_id', sessionId)
+                .order('created_at', { ascending: true });
+
+            if (data && data.length > 0) {
+                data.forEach(msg => {
+                    conversationHistory.push({
+                        role: msg.role,
+                        content: msg.content
+                    });
+                    addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
+                });
+            }
+
+            // Highlight active session in sidebar
+            document.querySelectorAll('.session-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            const activeEl = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (activeEl) activeEl.classList.add('active');
+
+            // Save as current session
+            localStorage.setItem('jarvis_last_session', sessionId);
         }
 
         function renderSessionsSidebar() {
@@ -673,27 +729,13 @@
             const sessions = getSessions();
             sessions.forEach(session => {
                 const item = document.createElement('div');
-                item.className = 'history-item' + (session.id === currentSessionId ? ' active' : '');
+                item.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
+                item.setAttribute('data-session-id', session.id);
                 item.textContent = session.title;
-                item.onclick = async () => {
-                    if (session.id === currentSessionId) return;
-                    // Switch to this session
-                    currentSessionId = session.id;
-                    localStorage.setItem('jarvis_last_session', currentSessionId);
-                    clearChatUI();
-                    await loadChatFromDB(currentSessionId);
-                    renderSessionsSidebar();
-                };
+                item.onclick = () => loadSession(session.id);
                 historyList.appendChild(item);
             });
         }
-
-        // DOM Elements
-        const chatContainer = document.getElementById('chat-container');
-        const typingIndicator = document.getElementById('typing-indicator');
-        const micBtn = document.getElementById('mic-btn');
-        const textInput = document.getElementById('text-input');
-        const sendBtn = document.getElementById('send-btn');
 
         // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
