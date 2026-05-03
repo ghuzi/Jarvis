@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jarvis AI Assistant</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #0a0a0f;
@@ -540,11 +541,56 @@
     <script>
         document.body.style.overflowY = 'hidden';
 
+        // Supabase Setup
+        const SUPABASE_URL = 'https://ecljkvpceakvsfscjqmq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjbGprdnBjZWFrdnNmc2NqcW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3Nzc1ODEsImV4cCI6MjA5MzM1MzU4MX0.b1G_1ZGA0ePg6-vr-BHkuMPNH1vCwl4SV3WKK_E1CqQ';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const USER_ID = 'default_user';
+
         // State
         let memories = [];
         let conversationHistory = [];
         let isRecording = false;
         let currentSpeakBtn = null;
+
+        // --- Supabase DB Functions ---
+        async function saveMemoryToDB(memoryItem) {
+            await supabaseClient.from('memories').insert({
+                user_id: USER_ID,
+                type: memoryItem.type,
+                label: memoryItem.label,
+                detail: memoryItem.detail
+            });
+        }
+
+        async function loadMemoriesFromDB() {
+            const { data } = await supabaseClient.from('memories')
+                .select('*')
+                .eq('user_id', USER_ID)
+                .order('created_at', { ascending: true });
+            if (data) memories = data;
+        }
+
+        async function saveChatToDB(role, content) {
+            await supabaseClient.from('conversations').insert({
+                user_id: USER_ID,
+                role: role,
+                content: content
+            });
+        }
+
+        async function loadChatFromDB() {
+            const { data } = await supabaseClient.from('conversations')
+                .select('*')
+                .eq('user_id', USER_ID)
+                .order('created_at', { ascending: true });
+            if (data && data.length > 0) {
+                data.forEach(msg => {
+                    conversationHistory.push({ role: msg.role, content: msg.content });
+                    addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
+                });
+            }
+        }
 
         // DOM Elements
         const chatContainer = document.getElementById('chat-container');
@@ -778,18 +824,23 @@
             }
         });
 
-        clearHistoryBtn.addEventListener('click', () => {
+        clearHistoryBtn.addEventListener('click', async () => {
             historyList.innerHTML = '';
             const messages = chatContainer.querySelectorAll('.message');
             for (let i = 1; i < messages.length; i++) {
                 messages[i].remove();
             }
+            // Clear from Supabase
+            await supabaseClient.from('memories').delete().eq('user_id', USER_ID);
+            await supabaseClient.from('conversations').delete().eq('user_id', USER_ID);
+            memories = [];
             conversationHistory = [];
         });
 
         const updateMemories = (newMemory) => {
             // newMemory is a {type, label, detail} object
             memories.push(newMemory);
+            saveMemoryToDB(newMemory);
             console.log('Memory stored:', newMemory);
         };
 
@@ -866,6 +917,7 @@ RULES:
                     .replace(/MEMORY_UPDATE:\s*\{[^}]*\}/gs, '')
                     .trim();
                 const { speakBtnRef: newSpeakBtn } = addMessage(cleanReply, 'ai');
+                saveChatToDB('assistant', cleanReply);
                 speakText(cleanReply, newSpeakBtn);
 
             } catch (error) {
@@ -882,6 +934,7 @@ RULES:
             // Add user message
             const { msgId: userMsgId } = addMessage(text, 'user');
             conversationHistory.push({ role: "user", content: text });
+            saveChatToDB('user', text);
             textInput.value = '';
 
             // Add to sidebar
@@ -1195,6 +1248,17 @@ RULES:
         textInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSend();
         });
+
+        // Load persistent data from Supabase on page load
+        (async () => {
+            try {
+                await loadMemoriesFromDB();
+                await loadChatFromDB();
+                console.log('Loaded', memories.length, 'memories and', conversationHistory.length, 'chat messages from DB');
+            } catch (e) {
+                console.error('Failed to load from Supabase:', e);
+            }
+        })();
     </script>
 </body>
 
