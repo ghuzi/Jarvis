@@ -108,8 +108,25 @@
             top: 0;
             left: 0;
             width: 100%;
-            z-index: 50;
+            z-index: 70;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 50;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar-close:hover {
+            color: var(--accent-color);
         }
 
         .navbar-title {
@@ -477,6 +494,7 @@
             <div class="navbar-title">JARVIS</div>
         </div>
         <div id="sidebar" class="sidebar">
+            <button id="sidebar-close" class="sidebar-close" title="Close History">✕</button>
             <div class="sidebar-header">Chat History</div>
             <div id="history-list" class="history-list">
                 <!-- History items will appear here -->
@@ -746,11 +764,22 @@
         // Sidebar Logic
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const sidebar = document.getElementById('sidebar');
+        const sidebarClose = document.getElementById('sidebar-close');
         const clearHistoryBtn = document.getElementById('clear-history-btn');
         const historyList = document.getElementById('history-list');
 
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('open');
+        });
+
+        sidebarClose.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
         });
 
         clearHistoryBtn.addEventListener('click', () => {
