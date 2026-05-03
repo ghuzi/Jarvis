@@ -644,9 +644,7 @@
             }
 
             let speechText = text
-                .replace(/MEMORY_UPDATE[=:]\s*[\"\{].*$/gms, '')
-                .replace(/\{[^}]*\}/gs, '')
-                .replace(/\[[^\]]*\]/gs, '')
+                .replace(/MEMORY_UPDATE:\s*\{[^}]*\}/gs, '')
                 .trim();
 
             const utterance = new SpeechSynthesisUtterance(speechText);
@@ -694,11 +692,9 @@
 
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'bubble';
-            // Clean text for display
+            // Clean text for display (remove MEMORY_UPDATE line only)
             bubbleDiv.textContent = text
-                .replace(/MEMORY_UPDATE[=:]\s*[\"\{].*$/gms, '')
-                .replace(/\{[^}]*\}/gs, '')
-                .replace(/\[[^\]]*\]/gs, '')
+                .replace(/MEMORY_UPDATE:\s*\{[^}]*\}/gs, '')
                 .trim();
 
             messageDiv.appendChild(bubbleDiv);
@@ -791,9 +787,34 @@
             conversationHistory = [];
         });
 
-        const updateMemories = (newMemories) => {
-            memories = newMemories;
-            // Memory chips UI removed per request, but logic remains
+        const updateMemories = (newMemory) => {
+            // newMemory is a {type, label, detail} object
+            memories.push(newMemory);
+            console.log('Memory stored:', newMemory);
+        };
+
+        // Build system prompt with memory bank
+        const buildSystemPrompt = () => {
+            let memoryBank = '';
+            if (memories.length === 0) {
+                memoryBank = '(empty)';
+            } else {
+                memoryBank = memories.map(m => `- [${m.type}] ${m.label}: ${m.detail}`).join('\n');
+            }
+
+            return `You are Jarvis, a personal AI assistant with memory.
+
+MEMORY BANK (already stored):
+${memoryBank}
+
+RULES:
+1. When user mentions any event, exam, meeting, task, deadline, reminder — extract it and add at END of response:
+   MEMORY_UPDATE:{"type":"event","label":"short label","detail":"full detail"}
+
+2. When user asks about schedule, tasks, reminders, what to do — FIRST check MEMORY BANK above and list everything stored there. Do NOT give generic advice. Give SPECIFIC recall from memory.
+
+3. Be conversational and helpful.
+4. If memory bank is empty, say so honestly.`;
         };
 
         // API Interaction
@@ -801,13 +822,17 @@
             setTyping(true);
 
             try {
+                // Build messages with system prompt injected
+                const systemMessage = { role: "system", content: buildSystemPrompt() };
+                const messagesWithSystem = [systemMessage, ...conversationHistory];
+
                 const response = await fetch("/api/chat", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        messages: conversationHistory
+                        messages: messagesWithSystem
                     })
                 });
 
@@ -819,32 +844,16 @@
                 const data = await response.json();
                 const aiMessage = data.choices[0].message.content;
 
-                // Add to history
+                // Add to conversation history (without system prompt)
                 conversationHistory.push({ role: "assistant", content: aiMessage });
 
-                // Parse Memory
-                const memoryMatch = aiMessage.match(/MEMORY_UPDATE:\s*(\{.*\})/s);
+                // Parse Memory — expects MEMORY_UPDATE:{"type":"...","label":"...","detail":"..."}
+                const memoryMatch = aiMessage.match(/MEMORY_UPDATE:\s*(\{[^}]+\})/s);
                 if (memoryMatch && memoryMatch[1]) {
                     try {
                         const memoryData = JSON.parse(memoryMatch[1]);
-
-                        // Extract array dynamically based on the structure returned
-                        let memArray = [];
-                        if (Array.isArray(memoryData)) {
-                            memArray = memoryData;
-                        } else {
-                            for (const key in memoryData) {
-                                if (Array.isArray(memoryData[key])) {
-                                    memArray = memoryData[key];
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (memArray.length > 0) {
-                            // Merge new memories, ensuring uniqueness
-                            const mergedMemories = [...new Set([...memories, ...memArray])];
-                            updateMemories(mergedMemories);
+                        if (memoryData.type && memoryData.label && memoryData.detail) {
+                            updateMemories(memoryData);
                         }
                     } catch (e) {
                         console.error("Failed to parse memory json", e);
@@ -854,9 +863,7 @@
                 // UI Updates
                 setTyping(false);
                 const cleanReply = aiMessage
-                    .replace(/MEMORY_UPDATE[=:]\s*[\"\{].*$/gms, '')
-                    .replace(/\{[^}]*\}/gs, '')
-                    .replace(/\[[^\]]*\]/gs, '')
+                    .replace(/MEMORY_UPDATE:\s*\{[^}]*\}/gs, '')
                     .trim();
                 const { speakBtnRef: newSpeakBtn } = addMessage(cleanReply, 'ai');
                 speakText(cleanReply, newSpeakBtn);
