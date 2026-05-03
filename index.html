@@ -462,8 +462,6 @@
                         onclick="handleSpeakToggle('Hello, I am Jarvis. How can I assist you today?', this)">🔊</button>
                     <button class="action-btn" title="Copy message"
                         onclick="navigator.clipboard.writeText('Hello, I am Jarvis. How can I assist you today?')">Copy</button>
-                    <button class="action-btn" title="Edit message"
-                        onclick="document.getElementById('text-input').value = 'Hello, I am Jarvis. How can I assist you today?'">Edit</button>
                 </div>
             </div>
             <div id="typing-indicator" class="typing-indicator">
@@ -658,34 +656,42 @@
             messageDiv.appendChild(bubbleDiv);
 
             let speakBtnRef = null;
-            if (sender === 'ai') {
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'actions';
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'actions';
 
+            if (sender === 'user') {
+                actionsDiv.style.justifyContent = 'flex-end';
+                actionsDiv.style.marginRight = '0.5rem';
+                actionsDiv.style.marginLeft = '0';
+            }
+
+            if (sender === 'ai') {
                 const speakBtn = document.createElement('button');
                 speakBtn.className = 'action-btn';
                 speakBtn.title = 'Speak message';
                 speakBtn.textContent = '🔊';
                 speakBtn.onclick = () => handleSpeakToggle(bubbleDiv.textContent, speakBtn);
                 speakBtnRef = speakBtn;
+                actionsDiv.appendChild(speakBtn);
+            }
 
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'action-btn';
-                copyBtn.title = 'Copy message';
-                copyBtn.textContent = 'Copy';
-                copyBtn.onclick = () => navigator.clipboard.writeText(bubbleDiv.textContent);
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'action-btn';
+            copyBtn.title = 'Copy message';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = () => navigator.clipboard.writeText(bubbleDiv.textContent);
+            actionsDiv.appendChild(copyBtn);
 
+            if (sender === 'user') {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'action-btn';
                 editBtn.title = 'Edit message';
                 editBtn.textContent = 'Edit';
                 editBtn.onclick = () => document.getElementById('text-input').value = bubbleDiv.textContent;
-
-                actionsDiv.appendChild(speakBtn);
-                actionsDiv.appendChild(copyBtn);
                 actionsDiv.appendChild(editBtn);
-                messageDiv.appendChild(actionsDiv);
             }
+
+            messageDiv.appendChild(actionsDiv);
 
             chatContainer.insertBefore(messageDiv, typingIndicator);
             scrollToBottom();
