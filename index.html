@@ -845,11 +845,73 @@
                 speakText(reply, btn);
                 return;
             }
+            if (lowerText.includes('open youtube and type ')) {
+                let query = lowerText.split('open youtube and type ')[1].trim();
+                window.open('https://youtube.com/results?search_query=' + encodeURIComponent(query), '_blank');
+                const reply = `Searching ${query} on YouTube!`;
+                const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                speakText(reply, btn);
+                return;
+            }
+            
+            if (lowerText.includes('youtube') && (lowerText.includes('search') || lowerText.includes('type') || lowerText.includes('play') || lowerText.includes('find'))) {
+                let query = '';
+                let actionMatch = lowerText.match(/(?:search|type|play|find)\s+(.*?)(?:\s+(?:on youtube|youtube pe)|$)/);
+                
+                if (actionMatch && actionMatch[1]) {
+                    query = actionMatch[1].replace(/\b(?:on youtube|youtube pe|youtube|on|pe)\b/gi, '').trim();
+                } else {
+                    query = lowerText.replace(/\b(?:search|type|play|find|youtube|on|pe)\b/gi, '').trim();
+                }
+
+                if (query) {
+                    window.open('https://youtube.com/results?search_query=' + encodeURIComponent(query), '_blank');
+                    const reply = `Searching ${query} on YouTube!`;
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://youtube.com', '_blank');
+                    const reply = 'Opening YouTube for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
+                return;
+            }
+
             if (lowerText.includes('open youtube')) {
                 window.open('https://youtube.com', '_blank');
                 const reply = 'Opening YouTube for you!';
                 const { speakBtnRef: btn } = addMessage(reply, 'ai');
                 speakText(reply, btn);
+                return;
+            }
+
+            if (lowerText.includes('google') && lowerText.includes('search')) {
+                let query = '';
+                if (lowerText.includes('google search ')) {
+                    query = lowerText.split('google search ')[1].trim();
+                } else if (lowerText.match(/search\s+(.*?)\s+on google/)) {
+                    query = lowerText.match(/search\s+(.*?)\s+on google/)[1].trim();
+                } else {
+                    let match = lowerText.match(/search\s+(.*)/);
+                    if (match) {
+                        query = match[1].replace(/\b(?:on google|google|on)\b/gi, '').trim();
+                    } else {
+                        query = lowerText.replace(/\b(?:google|search|on)\b/gi, '').trim();
+                    }
+                }
+                
+                if (query) {
+                    window.open('https://google.com/search?q=' + encodeURIComponent(query), '_blank');
+                    const reply = `Searching ${query} on Google!`;
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://google.com', '_blank');
+                    const reply = 'Opening Google for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
                 return;
             }
             if (lowerText.includes('open google')) {
