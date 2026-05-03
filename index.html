@@ -832,10 +832,22 @@
             const lowerText = text.toLowerCase();
             const msg = lowerText;
 
-            function extractQuery(msg, beforeWords, afterWords) {
+            function extractQueryAnywhere(msg, triggerWords, stopWords) {
                 let query = msg;
-                beforeWords.forEach(w => { query = query.replace(new RegExp('.*' + w + '\\s+', 'i'), ''); });
-                afterWords.forEach(w => { query = query.replace(new RegExp('\\s*' + w + '.*', 'i'), ''); });
+                
+                // Find which trigger word exists and extract after it
+                for (let trigger of triggerWords) {
+                    if (msg.includes(trigger)) {
+                        query = msg.substring(msg.indexOf(trigger) + trigger.length).trim();
+                        break;
+                    }
+                }
+                
+                // Remove stop words from end
+                for (let stop of stopWords) {
+                    query = query.replace(new RegExp(stop + '.*$', 'i'), '').trim();
+                }
+                
                 return query.trim();
             }
 
@@ -865,7 +877,7 @@
             if (msg.includes('youtube')) {
                 let query = '';
                 if (msg.includes('search') || msg.includes('type') || msg.includes('play') || msg.includes('find') || msg.includes('chalao')) {
-                    query = extractQuery(msg, ['search','type','play','find','chalao'], ['on youtube','youtube pe','youtube par','youtube']);
+                    query = extractQueryAnywhere(msg, ['search','type','play','find','chalao'], ['on youtube','youtube pe','youtube par','youtube']);
                 }
                 if (query) {
                     window.open('https://youtube.com/results?search_query=' + encodeURIComponent(query), '_blank');
@@ -885,7 +897,7 @@
             if (msg.includes('google')) {
                 let query = '';
                 if (msg.includes('search') || msg.includes('find') || msg.includes('dhundo') || msg.includes('type')) {
-                    query = extractQuery(msg, ['search','find','dhundo','type'], ['on google','google pe','google par','google']);
+                    query = extractQueryAnywhere(msg, ['search','find','dhundo','type'], ['on google','google pe','google par','google']);
                 }
                 if (query) {
                     window.open('https://google.com/search?q=' + encodeURIComponent(query), '_blank');
@@ -903,7 +915,7 @@
 
             // SPOTIFY
             if (msg.includes('spotify')) {
-                let query = extractQuery(msg, ['play','search','find'], ['on spotify','spotify pe','spotify']);
+                let query = extractQueryAnywhere(msg, ['play','search','find'], ['on spotify','spotify pe','spotify']);
                 if (query && query !== msg) {
                     window.open('https://open.spotify.com/search/' + encodeURIComponent(query), '_blank');
                     const reply = 'Playing "' + query + '" on Spotify!';
@@ -920,7 +932,7 @@
 
             // TWITTER/X
             if (msg.includes('twitter') || msg.includes(' x ')) {
-                let query = extractQuery(msg, ['search','find'], ['on twitter','on x','twitter pe']);
+                let query = extractQueryAnywhere(msg, ['search','find'], ['on twitter','on x','twitter pe']);
                 if (query && query !== msg) {
                     window.open('https://x.com/search?q=' + encodeURIComponent(query), '_blank');
                     const reply = 'Searching "' + query + '" on Twitter!';
@@ -937,7 +949,7 @@
 
             // LINKEDIN
             if (msg.includes('linkedin')) {
-                let query = extractQuery(msg, ['search','find'], ['on linkedin','linkedin pe']);
+                let query = extractQueryAnywhere(msg, ['search','find'], ['on linkedin','linkedin pe']);
                 if (query && query !== msg) {
                     window.open('https://linkedin.com/search/results/all/?keywords=' + encodeURIComponent(query), '_blank');
                     const reply = 'Searching "' + query + '" on LinkedIn!';
@@ -954,7 +966,7 @@
 
             // GITHUB
             if (msg.includes('github')) {
-                let query = extractQuery(msg, ['search','find'], ['on github','github pe']);
+                let query = extractQueryAnywhere(msg, ['search','find'], ['on github','github pe']);
                 if (query && query !== msg) {
                     window.open('https://github.com/search?q=' + encodeURIComponent(query), '_blank');
                     const reply = 'Searching "' + query + '" on GitHub!';
@@ -971,7 +983,7 @@
 
             // GOOGLE MAPS
             if (msg.includes('maps') || msg.includes('directions to') || msg.includes('navigate to')) {
-                let place = extractQuery(msg, ['directions to','navigate to','search','find'], ['on maps','maps pe']);
+                let place = extractQueryAnywhere(msg, ['directions to','navigate to','search','find'], ['on maps','maps pe']);
                 if (place && place !== msg) {
                     window.open('https://maps.google.com/maps?q=' + encodeURIComponent(place), '_blank');
                     const reply = 'Getting directions to "' + place + '"!';
