@@ -696,21 +696,7 @@
             clearChatUI();
 
             // Load messages from Supabase for this session
-            const { data, error } = await supabaseClient
-                .from('conversations')
-                .select('*')
-                .eq('session_id', sessionId)
-                .order('created_at', { ascending: true });
-
-            if (data && data.length > 0) {
-                data.forEach(msg => {
-                    conversationHistory.push({
-                        role: msg.role,
-                        content: msg.content
-                    });
-                    addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
-                });
-            }
+            await loadChatFromDB(sessionId);
 
             // Highlight active session in sidebar
             document.querySelectorAll('.session-item').forEach(el => {
