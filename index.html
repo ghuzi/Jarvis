@@ -824,6 +824,15 @@
 
             // System Commands
             const lowerText = text.toLowerCase();
+            const msg = lowerText;
+
+            function extractQuery(msg, beforeWords, afterWords) {
+                let query = msg;
+                beforeWords.forEach(w => { query = query.replace(new RegExp('.*' + w + '\\s+', 'i'), ''); });
+                afterWords.forEach(w => { query = query.replace(new RegExp('\\s*' + w + '.*', 'i'), ''); });
+                return query.trim();
+            }
+
             if (lowerText.includes('open file manager')) {
                 fetch('http://localhost:8765/command?action=filemanager');
                 const reply = 'Opening File Manager for you!';
@@ -845,28 +854,16 @@
                 speakText(reply, btn);
                 return;
             }
-            if (lowerText.includes('open youtube and type ')) {
-                let query = lowerText.split('open youtube and type ')[1].trim();
-                window.open('https://youtube.com/results?search_query=' + encodeURIComponent(query), '_blank');
-                const reply = `Searching ${query} on YouTube!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-            
-            if (lowerText.includes('youtube') && (lowerText.includes('search') || lowerText.includes('type') || lowerText.includes('play') || lowerText.includes('find'))) {
-                let query = '';
-                let actionMatch = lowerText.match(/(?:search|type|play|find)\s+(.*?)(?:\s+(?:on youtube|youtube pe)|$)/);
-                
-                if (actionMatch && actionMatch[1]) {
-                    query = actionMatch[1].replace(/\b(?:on youtube|youtube pe|youtube|on|pe)\b/gi, '').trim();
-                } else {
-                    query = lowerText.replace(/\b(?:search|type|play|find|youtube|on|pe)\b/gi, '').trim();
-                }
 
+            // YOUTUBE
+            if (msg.includes('youtube')) {
+                let query = '';
+                if (msg.includes('search') || msg.includes('type') || msg.includes('play') || msg.includes('find') || msg.includes('chalao')) {
+                    query = extractQuery(msg, ['search','type','play','find','chalao'], ['on youtube','youtube pe','youtube par','youtube']);
+                }
                 if (query) {
                     window.open('https://youtube.com/results?search_query=' + encodeURIComponent(query), '_blank');
-                    const reply = `Searching ${query} on YouTube!`;
+                    const reply = 'Searching "' + query + '" on YouTube!';
                     const { speakBtnRef: btn } = addMessage(reply, 'ai');
                     speakText(reply, btn);
                 } else {
@@ -878,32 +875,15 @@
                 return;
             }
 
-            if (lowerText.includes('open youtube')) {
-                window.open('https://youtube.com', '_blank');
-                const reply = 'Opening YouTube for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
-            if (lowerText.includes('google') && lowerText.includes('search')) {
+            // GOOGLE
+            if (msg.includes('google')) {
                 let query = '';
-                if (lowerText.includes('google search ')) {
-                    query = lowerText.split('google search ')[1].trim();
-                } else if (lowerText.match(/search\s+(.*?)\s+on google/)) {
-                    query = lowerText.match(/search\s+(.*?)\s+on google/)[1].trim();
-                } else {
-                    let match = lowerText.match(/search\s+(.*)/);
-                    if (match) {
-                        query = match[1].replace(/\b(?:on google|google|on)\b/gi, '').trim();
-                    } else {
-                        query = lowerText.replace(/\b(?:google|search|on)\b/gi, '').trim();
-                    }
+                if (msg.includes('search') || msg.includes('find') || msg.includes('dhundo') || msg.includes('type')) {
+                    query = extractQuery(msg, ['search','find','dhundo','type'], ['on google','google pe','google par','google']);
                 }
-                
                 if (query) {
                     window.open('https://google.com/search?q=' + encodeURIComponent(query), '_blank');
-                    const reply = `Searching ${query} on Google!`;
+                    const reply = 'Searching "' + query + '" on Google!';
                     const { speakBtnRef: btn } = addMessage(reply, 'ai');
                     speakText(reply, btn);
                 } else {
@@ -914,13 +894,92 @@
                 }
                 return;
             }
-            if (lowerText.includes('open google')) {
-                window.open('https://google.com', '_blank');
-                const reply = 'Opening Google for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
+
+            // SPOTIFY
+            if (msg.includes('spotify')) {
+                let query = extractQuery(msg, ['play','search','find'], ['on spotify','spotify pe','spotify']);
+                if (query && query !== msg) {
+                    window.open('https://open.spotify.com/search/' + encodeURIComponent(query), '_blank');
+                    const reply = 'Playing "' + query + '" on Spotify!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://open.spotify.com', '_blank');
+                    const reply = 'Opening Spotify for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
                 return;
             }
+
+            // TWITTER/X
+            if (msg.includes('twitter') || msg.includes(' x ')) {
+                let query = extractQuery(msg, ['search','find'], ['on twitter','on x','twitter pe']);
+                if (query && query !== msg) {
+                    window.open('https://x.com/search?q=' + encodeURIComponent(query), '_blank');
+                    const reply = 'Searching "' + query + '" on Twitter!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://x.com', '_blank');
+                    const reply = 'Opening Twitter for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
+                return;
+            }
+
+            // LINKEDIN
+            if (msg.includes('linkedin')) {
+                let query = extractQuery(msg, ['search','find'], ['on linkedin','linkedin pe']);
+                if (query && query !== msg) {
+                    window.open('https://linkedin.com/search/results/all/?keywords=' + encodeURIComponent(query), '_blank');
+                    const reply = 'Searching "' + query + '" on LinkedIn!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://linkedin.com', '_blank');
+                    const reply = 'Opening LinkedIn for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
+                return;
+            }
+
+            // GITHUB
+            if (msg.includes('github')) {
+                let query = extractQuery(msg, ['search','find'], ['on github','github pe']);
+                if (query && query !== msg) {
+                    window.open('https://github.com/search?q=' + encodeURIComponent(query), '_blank');
+                    const reply = 'Searching "' + query + '" on GitHub!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://github.com', '_blank');
+                    const reply = 'Opening GitHub for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
+                return;
+            }
+
+            // GOOGLE MAPS
+            if (msg.includes('maps') || msg.includes('directions to') || msg.includes('navigate to')) {
+                let place = extractQuery(msg, ['directions to','navigate to','search','find'], ['on maps','maps pe']);
+                if (place && place !== msg) {
+                    window.open('https://maps.google.com/maps?q=' + encodeURIComponent(place), '_blank');
+                    const reply = 'Getting directions to "' + place + '"!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                } else {
+                    window.open('https://maps.google.com', '_blank');
+                    const reply = 'Opening Google Maps for you!';
+                    const { speakBtnRef: btn } = addMessage(reply, 'ai');
+                    speakText(reply, btn);
+                }
+                return;
+            }
+
             if (lowerText.includes('play music')) {
                 window.open('https://spotify.com', '_blank');
                 const reply = 'Playing music on Spotify for you!';
@@ -928,6 +987,7 @@
                 speakText(reply, btn);
                 return;
             }
+
             if (lowerText.includes('open settings')) {
                 fetch('http://localhost:8765/command?action=settings');
                 const reply = 'Opening Settings for you!';
@@ -964,7 +1024,6 @@
                 return;
             }
 
-            // Smart Browser Commands
             let match = lowerText.match(/whatsapp (.+) ko message karo (.*)/);
             if (match) {
                 window.open('https://web.whatsapp.com', '_blank');
@@ -1003,54 +1062,9 @@
                 return;
             }
 
-            match = lowerText.match(/search (.+) on twitter/);
-            if (match) {
-                window.open('https://x.com/search?q=' + encodeURIComponent(match[1].trim()), '_blank');
-                const reply = `Searching ${match[1]} on Twitter!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            } else if (lowerText.includes('open twitter') || lowerText.includes('open x')) {
-                window.open('https://x.com', '_blank');
-                const reply = 'Opening Twitter for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
-            match = lowerText.match(/search (.+) on github/);
-            if (match) {
-                window.open('https://github.com/search?q=' + encodeURIComponent(match[1].trim()), '_blank');
-                const reply = `Searching ${match[1]} on GitHub!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            } else if (lowerText.includes('open github')) {
-                window.open('https://github.com', '_blank');
-                const reply = 'Opening GitHub for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
             if (lowerText.includes('open gmail')) {
                 window.open('https://gmail.com', '_blank');
                 const reply = 'Opening Gmail for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
-            match = lowerText.match(/search (.+) on linkedin/);
-            if (match) {
-                window.open('https://linkedin.com/search/results/all/?keywords=' + encodeURIComponent(match[1].trim()), '_blank');
-                const reply = `Searching ${match[1]} on LinkedIn!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            } else if (lowerText.includes('open linkedin')) {
-                window.open('https://linkedin.com', '_blank');
-                const reply = 'Opening LinkedIn for you!';
                 const { speakBtnRef: btn } = addMessage(reply, 'ai');
                 speakText(reply, btn);
                 return;
@@ -1064,39 +1078,9 @@
                 return;
             }
 
-            match = lowerText.match(/play (.+) on spotify/);
-            if (match) {
-                window.open('https://open.spotify.com/search/' + encodeURIComponent(match[1].trim()), '_blank');
-                const reply = `Searching ${match[1]} on Spotify!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            } else if (lowerText.includes('open spotify')) {
-                window.open('https://open.spotify.com', '_blank');
-                const reply = 'Opening Spotify for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
             if (lowerText.includes('open chatgpt')) {
                 window.open('https://chat.openai.com', '_blank');
                 const reply = 'Opening ChatGPT for you!';
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            }
-
-            match = lowerText.match(/directions to (.+)/);
-            if (match) {
-                window.open('https://maps.google.com/maps?q=' + encodeURIComponent(match[1].trim()), '_blank');
-                const reply = `Getting directions to ${match[1]}!`;
-                const { speakBtnRef: btn } = addMessage(reply, 'ai');
-                speakText(reply, btn);
-                return;
-            } else if (lowerText.includes('open maps')) {
-                window.open('https://maps.google.com', '_blank');
-                const reply = 'Opening Maps for you!';
                 const { speakBtnRef: btn } = addMessage(reply, 'ai');
                 speakText(reply, btn);
                 return;
@@ -1118,6 +1102,7 @@
                 speakText(reply, btn);
                 return;
             }
+
 
             callGroqApi();
         };
