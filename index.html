@@ -226,6 +226,31 @@
             background-color: rgba(229, 62, 62, 0.2);
         }
 
+        .new-chat-btn {
+            margin: 15px;
+            margin-bottom: 5px;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-color), #403698);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(83, 74, 183, 0.4);
+        }
+
+        .history-item.active {
+            background: var(--accent-color);
+            color: var(--text-main);
+        }
+
         /* Chat Area */
         main {
             flex: 1;
@@ -497,10 +522,11 @@
         <div id="sidebar" class="sidebar">
             <button id="sidebar-close" class="sidebar-close" title="Close History">✕</button>
             <div class="sidebar-header">Chat History</div>
+            <button id="new-chat-btn" class="new-chat-btn">+ New Chat</button>
             <div id="history-list" class="history-list">
-                <!-- History items will appear here -->
+                <!-- Session items will appear here -->
             </div>
-            <button id="clear-history-btn" class="clear-history-btn">Clear History</button>
+            <button id="clear-history-btn" class="clear-history-btn">Clear All History</button>
         </div>
 
         <main id="chat-container">
@@ -547,11 +573,21 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const USER_ID = 'default_user';
 
+        // UUID Generator
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+
         // State
         let memories = [];
         let conversationHistory = [];
         let isRecording = false;
         let currentSpeakBtn = null;
+        let currentSessionId = localStorage.getItem('jarvis_last_session') || generateUUID();
+        localStorage.setItem('jarvis_last_session', currentSessionId);
 
         // --- Supabase DB Functions ---
         async function saveMemoryToDB(memoryItem) {
@@ -574,15 +610,18 @@
         async function saveChatToDB(role, content) {
             await supabaseClient.from('conversations').insert({
                 user_id: USER_ID,
+                session_id: currentSessionId,
                 role: role,
                 content: content
             });
         }
 
-        async function loadChatFromDB() {
+        async function loadChatFromDB(sessionId) {
+            const sid = sessionId || currentSessionId;
             const { data } = await supabaseClient.from('conversations')
                 .select('*')
                 .eq('user_id', USER_ID)
+                .eq('session_id', sid)
                 .order('created_at', { ascending: true });
             if (data && data.length > 0) {
                 data.forEach(msg => {
@@ -590,6 +629,63 @@
                     addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai');
                 });
             }
+        }
+
+        // --- Session Management ---
+        function getSessions() {
+            const raw = localStorage.getItem('jarvis_sessions');
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function saveSessions(sessions) {
+            localStorage.setItem('jarvis_sessions', JSON.stringify(sessions));
+        }
+
+        function addSession(id, title) {
+            const sessions = getSessions();
+            // Don't duplicate
+            if (sessions.find(s => s.id === id)) return;
+            sessions.unshift({ id, title, created_at: new Date().toISOString() });
+            saveSessions(sessions);
+        }
+
+        function updateSessionTitle(id, title) {
+            const sessions = getSessions();
+            const session = sessions.find(s => s.id === id);
+            if (session && session.title === 'New Chat') {
+                session.title = title.length > 30 ? title.substring(0, 30) + '...' : title;
+                saveSessions(sessions);
+            }
+        }
+
+        function clearChatUI() {
+            const messages = chatContainer.querySelectorAll('.message');
+            // Keep the first welcome message
+            for (let i = 1; i < messages.length; i++) {
+                messages[i].remove();
+            }
+            conversationHistory = [];
+        }
+
+        function renderSessionsSidebar() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            const sessions = getSessions();
+            sessions.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'history-item' + (session.id === currentSessionId ? ' active' : '');
+                item.textContent = session.title;
+                item.onclick = async () => {
+                    if (session.id === currentSessionId) return;
+                    // Switch to this session
+                    currentSessionId = session.id;
+                    localStorage.setItem('jarvis_last_session', currentSessionId);
+                    clearChatUI();
+                    await loadChatFromDB(currentSessionId);
+                    renderSessionsSidebar();
+                };
+                historyList.appendChild(item);
+            });
         }
 
         // DOM Elements
@@ -808,7 +904,7 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarClose = document.getElementById('sidebar-close');
         const clearHistoryBtn = document.getElementById('clear-history-btn');
-        const historyList = document.getElementById('history-list');
+        const newChatBtn = document.getElementById('new-chat-btn');
 
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('open');
@@ -824,17 +920,30 @@
             }
         });
 
+        // New Chat button
+        newChatBtn.addEventListener('click', () => {
+            currentSessionId = generateUUID();
+            localStorage.setItem('jarvis_last_session', currentSessionId);
+            addSession(currentSessionId, 'New Chat');
+            clearChatUI();
+            renderSessionsSidebar();
+        });
+
+        // Clear ALL history
         clearHistoryBtn.addEventListener('click', async () => {
-            historyList.innerHTML = '';
-            const messages = chatContainer.querySelectorAll('.message');
-            for (let i = 1; i < messages.length; i++) {
-                messages[i].remove();
-            }
+            clearChatUI();
             // Clear from Supabase
             await supabaseClient.from('memories').delete().eq('user_id', USER_ID);
             await supabaseClient.from('conversations').delete().eq('user_id', USER_ID);
             memories = [];
             conversationHistory = [];
+            // Clear all sessions from localStorage
+            localStorage.removeItem('jarvis_sessions');
+            // Start a fresh session
+            currentSessionId = generateUUID();
+            localStorage.setItem('jarvis_last_session', currentSessionId);
+            addSession(currentSessionId, 'New Chat');
+            renderSessionsSidebar();
         });
 
         const updateMemories = (newMemory) => {
@@ -937,15 +1046,14 @@ RULES:
             saveChatToDB('user', text);
             textInput.value = '';
 
-            // Add to sidebar
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-item';
-            historyItem.textContent = text.length > 30 ? text.substring(0, 30) + '...' : text;
-            historyItem.onclick = () => {
-                const targetMsg = document.getElementById(userMsgId);
-                if (targetMsg) targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            };
-            historyList.appendChild(historyItem);
+            // Track session — set title from first user message
+            const sessions = getSessions();
+            if (!sessions.find(s => s.id === currentSessionId)) {
+                addSession(currentSessionId, text.length > 30 ? text.substring(0, 30) + '...' : text);
+            } else {
+                updateSessionTitle(currentSessionId, text);
+            }
+            renderSessionsSidebar();
 
             // System Commands
             const lowerText = text.toLowerCase();
@@ -1253,7 +1361,15 @@ RULES:
         (async () => {
             try {
                 await loadMemoriesFromDB();
-                await loadChatFromDB();
+
+                // Ensure current session exists in localStorage
+                const sessions = getSessions();
+                if (!sessions.find(s => s.id === currentSessionId)) {
+                    addSession(currentSessionId, 'New Chat');
+                }
+
+                await loadChatFromDB(currentSessionId);
+                renderSessionsSidebar();
                 console.log('Loaded', memories.length, 'memories and', conversationHistory.length, 'chat messages from DB');
             } catch (e) {
                 console.error('Failed to load from Supabase:', e);
@@ -1261,3 +1377,5 @@ RULES:
         })();
     </script>
 </body>
+
+</html>
