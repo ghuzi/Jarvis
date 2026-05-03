@@ -98,16 +98,36 @@
             box-shadow: 0 0 0 2px rgba(83, 74, 183, 0.2);
         }
 
-        .sidebar-toggle {
+        .top-navbar {
+            height: 50px;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 50;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .navbar-title {
+            color: #534AB7;
+            font-weight: bold;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .sidebar-toggle {
             background: none;
             border: none;
             color: var(--text-main);
             font-size: 1.5rem;
             cursor: pointer;
-            z-index: 50;
             transition: color 0.3s ease;
         }
 
@@ -116,22 +136,26 @@
         }
 
         .sidebar {
-            position: absolute;
+            position: fixed;
             top: 0;
-            left: -250px;
-            width: 250px;
+            left: -260px;
+            width: 260px;
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(10px);
-            z-index: 40;
+            z-index: 60;
             transition: left 0.3s ease;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid #534AB7;
         }
 
         .sidebar.open {
             left: 0;
+        }
+
+        .sidebar.open ~ main {
+            margin-left: 260px;
         }
 
         .sidebar-header {
@@ -165,7 +189,7 @@
         }
 
         .history-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--accent-color);
             color: var(--text-main);
         }
 
@@ -190,10 +214,13 @@
             overflow-y: auto;
             height: calc(100vh - 200px);
             padding: 2rem;
+            padding-top: 60px;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
             scroll-behavior: smooth;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
         }
 
         .message {
@@ -445,7 +472,10 @@
 
 <body>
     <div id="app">
-        <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle History">☰</button>
+        <div class="top-navbar">
+            <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle History">☰</button>
+            <div class="navbar-title">JARVIS</div>
+        </div>
         <div id="sidebar" class="sidebar">
             <div class="sidebar-header">Chat History</div>
             <div id="history-list" class="history-list">
